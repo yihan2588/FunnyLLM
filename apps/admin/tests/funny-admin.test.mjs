@@ -43,3 +43,11 @@ test('model activation probe checks structured response and never includes provi
  await assert.rejects(probeModel('gemini-missing','private-key',async()=>new Response('private-key secret provider output',{status:403})),e=>{assert.match(e.message,/unchanged/);assert.doesNotMatch(e.message,/private-key|secret provider/);return true;});
  await assert.rejects(probeModel('gemini-missing','x',async()=>Response.json({output_text:'{"ok":false}'})),/unchanged/);
 });
+
+test('taste mutations accept one standard emoji, bounded fields and confirmed deletion',()=>{
+ const f=new FormData();Object.entries({action:'taste_save',emoji:'👩🏽‍🚀',label:'Spacey',prompt:'Pick an unexpected orbit.'}).forEach(([k,v])=>f.set(k,v));
+ assert.equal(parseMutation(f).data.emoji,'👩🏽‍🚀');
+ for(const bad of ['lol', '😊😊','4']){f.set('emoji',bad);assert.throws(()=>parseMutation(f),/one standard emoji/);}
+ f.set('action','taste_delete');f.set('id','00000000-0000-4000-8000-000000000001');
+ assert.throws(()=>parseMutation(f),/Confirm/);f.set('confirm','on');assert.equal(parseMutation(f).action,'taste_delete');
+});

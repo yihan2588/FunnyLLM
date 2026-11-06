@@ -144,3 +144,20 @@ html,body { overflow-x: clip; }
 
 .cw-locks input { height: 48px; padding-block: var(--space-xs) !important; }
 .cw-upload-button strong,.cw-upload-button>span:last-child { white-space: nowrap; }
+
+.cw-tastes { margin: 24px 0 0; padding: 0; border: 0; min-width: 0; }
+.cw-tastes legend { padding: 0; margin-bottom: 8px; font-weight: 600; }
+.cw-taste-bar { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; max-width: 100%; background: var(--color-paper-2); border: 1px solid var(--color-edge); border-radius: 16px; }
+.cw-taste-bar label { position: relative; flex: 1 1 auto; cursor: pointer; min-width: 0; }
+.cw-taste-tile { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 6px 16px; border: 1px solid transparent; border-radius: 11px; font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+.cw-taste-emoji { font: 20px/1 "Apple Color Emoji","Segoe UI Emoji",sans-serif; }
+.cw-taste-bar label:hover .cw-taste-tile { background: var(--color-card); }
+.cw-taste-bar input:checked + .cw-taste-tile { background: var(--color-ink); color: var(--color-paper); border-color: currentColor; }
+.cw-taste-bar input:focus-visible + .cw-taste-tile { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.cw-taste-bar input:disabled + .cw-taste-tile { cursor: wait; opacity: .65; }
+@media (max-width: 600px) {
+ .cw-taste-bar { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .cw-taste-tile { flex-direction: column; gap: 4px; padding: 8px 5px; line-height: 1.2; text-align: center; }
+ .cw-taste-bar label:last-child:nth-child(odd) { grid-column: 1 / -1; }
+ .cw-taste-bar label:last-child:nth-child(odd) .cw-taste-tile { flex-direction: row; gap: 8px; }
+}

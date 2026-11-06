@@ -1,7 +1,7 @@
 import { z } from "zod";
 import fontWidths from "./font-widths.json" with {type:"json"};
 
-export const VERSION = "cowriter-2.1";
+export const VERSION = "cowriter-2.2";
 export const INDEX_VERSION = "teaching-1-gemini-001-768";
 export const MODEL = "gemini-3.1-flash-lite";
 export const EMBEDDING_MODEL = "gemini-embedding-001";
@@ -10,7 +10,7 @@ export const MAX_CHARS = 200;
 export const wordCount = (text: string) => text.trim().split(/\s+/u).filter(Boolean).length;
 export const normalize = (text: string) => text.toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 export const captionSchema = z.string().trim().min(1).max(MAX_CHARS).refine(s => wordCount(s) <= MAX_WORDS, "Keep the caption to 20 words or fewer.").refine(s => !/[\r\n\u0000-\u001f]/u.test(s), "Use one line.").refine(s=>Array.from(s).every(c=>Object.hasOwn(fontWidths,c)),"Use Latin letters, numbers and supported punctuation; this meme font does not support emoji.");
-const base = { text: z.string().trim().max(700), locks: z.string().trim().max(240).default("") };
+const base = { tasteVersion: z.uuid().optional(), text: z.string().trim().max(700), locks: z.string().trim().max(240).default("") };
 export const inputSchema = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("pic"), ...base, uploadPath: z.string().regex(/^[\da-f-]{36}\/[\da-f-]{36}\.jpg$/i) }),
   z.object({ mode: z.literal("thought"), ...base, text: z.string().trim().min(3).max(700) }),
@@ -29,7 +29,10 @@ export const generatedOptionSchema = z.object({ image_id: z.string().min(1), cap
 export type GeneratedOption = z.infer<typeof generatedOptionSchema>;
 export type Option = GeneratedOption & { id: string; alt: string; width: number; height: number };
 export type CatalogImage = { id: string; description: string; affordances: string; family: string; storage_path: string; width: number; height: number; score?: number };
+export const tasteMenuItem = z.object({version:z.uuid(), emoji:z.string().min(1).max(64), label:z.string().min(1).max(24)});
+export type TasteMenuItem = z.infer<typeof tasteMenuItem>;
 export const runtimeSchema = z.object({
+  taste: tasteMenuItem.extend({prompt:z.string().min(1).max(600)}).optional(),
   model: z.string().regex(/^gemini-[a-zA-Z0-9._-]+$/).max(120),
   examples: z.array(z.object({id:z.uuid(),intent:z.string().max(700),image_description:z.string().max(1500),caption:captionSchema})).max(3),
   config_version: z.string().min(1).max(120),

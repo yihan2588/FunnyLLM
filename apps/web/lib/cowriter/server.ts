@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requestOrigin } from "@/lib/request-origin";
 import { inputSchema, generatedOptionSchema, keepsLiterals, runtimeSchema, DEFAULT_RUNTIME, lengthEditError, catalogAsset, VERSION, INDEX_VERSION, type State, type DraftInput, type CatalogImage, type Edit } from "./contracts";
 import { generate, CowriterError, type Timing } from "./provider";
-import { editPrompt } from "./prompts";
+import { withCleanAngle } from "./refusal";
+import { editPrompt, CLEAN_ANGLE } from "./prompts";
 import { writeDraft } from "./workflow";
 
 export const json = (data: unknown, status = 200) => Response.json(data,{status,headers:{"Cache-Control":"private, no-store"}});
@@ -108,7 +109,10 @@ async function editDraft(edit:Edit,ctx:Context,state:State,signal:AbortSignal,pr
   const imageId=selected?.id??"upload";
   progress(edit.operation==="swap"?"Adapting the caption to this image":"Refining your selected take");
   const image=state.input.mode==="pic"?await imageBytes(ctx.client,state,"upload"):undefined;
-  const output=await generate(editPrompt(state.input,state.intent,{...current,image_id:imageId},edit.operation,selected),generatedOptionSchema,apiKey,signal,image,t=>timings.push(t),edit.operation,fetch,(state.runtime??DEFAULT_RUNTIME).model);
+  const runtime=state.runtime??DEFAULT_RUNTIME;
+  const prompt=editPrompt(state.input,state.intent,{...current,image_id:imageId},edit.operation,selected,runtime.taste);
+  const output=await withCleanAngle(clean=>
+    generate(clean ? prompt+"\n"+CLEAN_ANGLE : prompt,generatedOptionSchema,apiKey,signal,image,t=>timings.push(t),clean?edit.operation+"_clean":edit.operation,fetch,runtime.model),signal);
   if(output.image_id!==imageId)throw new CowriterError("The writer tried to change the image. Your previous take is safe.");
   if(!keepsLiterals(output.caption,state.input.locks))throw new CowriterError("The writer missed a phrase you wanted to keep. Your previous take is safe.");
   const directionError=lengthEditError(edit.operation,current.caption,output.caption);
@@ -131,12 +135,15 @@ export async function runAction(request:Request,body:{requestId:string;input:Dra
     async start(controller){
       const send=(value:unknown)=>{if(!closed){try{controller.enqueue(new TextEncoder().encode(JSON.stringify(value)+"\n"));}catch{closed=true;}}};
       try{
-        if(isDraft){
+        if(isDraft && !body.input.tasteVersion){
           const {data,error}=await ctx.client.rpc("funny_runtime").abortSignal(signal);
           const parsed=runtimeSchema.safeParse(data);
           if(error||!parsed.success)throw new CowriterError("The writing configuration is temporarily unavailable. Please try again.",503);
           runtime=parsed.data;
-        }else runtime=runtimeSchema.parse(runtime);
+        }else {
+          runtime=runtimeSchema.parse(runtime);
+          if(isDraft && runtime.taste?.version!==body.input.tasteVersion)throw new CowriterError("The joke taste could not be loaded. Refresh the lab and try again.",409);
+        }
         const working={...claim.state,runtime};
         const next=isDraft?await createDraft(body.input,ctx,working,signal,s=>send({stage:s}),timings):await editDraft(body,ctx,working,signal,s=>send({stage:s}),timings);
         signal.throwIfAborted();send({stage:"Saving your complete takes"});

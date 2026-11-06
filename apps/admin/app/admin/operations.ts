@@ -22,8 +22,11 @@ export async function operate(form: FormData): Promise<ActionResult> {
       await probeModel(model.model_id, key);
       data.expected_model_id = model.model_id;
     }
-    const { data: result, error } = await client.rpc("funny_admin_mutate", { p_action: action, p_id: id, p_data: data });
-    if (error) return { error: /selected|active|not found|caption|words|examples|model|referenced|limit/i.test(error.message) ? error.message.slice(0, 240) : "This change could not be saved. Please retry." };
+    const args = { p_action: action, p_id: id, p_data: data };
+    const { data: result, error } = action.startsWith("taste_")
+      ? await client.rpc("funny_admin_tastes", { ...args, p_key: process.env.HUMOR_WRITER_KEY })
+      : await client.rpc("funny_admin_mutate", args);
+    if (error) return { error: /selected|active|not found|caption|words|examples|model|taste|referenced|limit/i.test(error.message) ? error.message.slice(0, 240) : "This change could not be saved. Please retry." };
     revalidatePath("/admin", "layout");
     return { ok: true, id: result?.id, message: action === "library_delete" ? "Image retired from retrieval. Existing history is preserved." : "Saved." };
   } catch (e) { return { error: e instanceof Error ? e.message : "Check the fields and try again." }; }
