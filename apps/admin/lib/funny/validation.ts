@@ -20,9 +20,16 @@ export function parseMutation(form: FormData) {
       const caption = field(form, "caption", 200);
       if (caption.split(/\s+/u).length > 20 || /[\r\n]/.test(caption)) throw new Error("Use a single caption of at most 20 words.");
       if (!Array.from(caption).every(c => Object.hasOwn(fontWidths, c))) throw new Error("Use Latin letters and supported punctuation in example captions; the meme font does not support emoji.");
-      data = { intent: field(form, "intent", 400), image_description: field(form, "image_description", 1500), caption, enabled: checked(form, "enabled") };
+      data = { intent: field(form, "intent", 400), image_description: field(form, "image_description", 1500, 3), caption, enabled: checked(form, "enabled") };
       break;
     }
+    case "taste_save": {
+      const emoji = field(form, "emoji", 64);
+      if (!new RegExp("^\\p{RGI_Emoji}$", "v").test(emoji)) throw new Error("Choose one standard emoji.");
+      data = { emoji, label: field(form, "label", 24), prompt: field(form, "prompt", 600) };
+      break;
+    }
+    case "taste_delete": break;
     case "model_save": {
       const model = field(form, "model_id", 100);
       if (!/^gemini-[a-z0-9][a-z0-9.-]{1,90}$/.test(model)) throw new Error("Use a Gemini model ID such as gemini-3.1-flash-lite.");
@@ -32,8 +39,8 @@ export function parseMutation(form: FormData) {
     case "post_restore": case "report_resolve": case "example_delete": case "model_delete": case "model_activate": case "library_delete": break;
     default: throw new Error("This action is not supported.");
   }
-  if (!["writing_enabled", "example_save", "model_save"].includes(action) && !id) throw new Error("Choose a record first.");
-  if (["post_remove", "example_delete", "model_delete", "library_delete"].includes(action) && !checked(form, "confirm")) throw new Error("Confirm this change before saving.");
+  if (!["writing_enabled", "example_save", "model_save", "taste_save"].includes(action) && !id) throw new Error("Choose a record first.");
+  if (["post_remove", "example_delete", "model_delete", "library_delete", "taste_delete"].includes(action) && !checked(form, "confirm")) throw new Error("Confirm this change before saving.");
   return { action, id, data };
 }
 export function libraryFields(form: FormData) {

@@ -5,7 +5,7 @@ import { adminOrigin } from '../lib/site.ts';
 
 const id='77777777-7777-4777-8777-777777777777';
 test('sign-in preserves current gallery, lab and account destinations',()=>{
- for(const path of ['/', '/lab', '/creations', '/profile', `/meme/${id}`, '/creations?tab=saved', '/lab?mode=pic', `/lab?mode=thought&draft=${id}`, `/lab?draft=${id}&mode=thought`]) assert.equal(safeReturn(path),path);
+ for(const path of ['/', '/lab', '/creations', '/profile', `/meme/${id}`, '/creations?tab=saved', '/lab?mode=pic', `/lab?mode=pic&taste=${id}`, `/lab?mode=thought&draft=${id}`, `/lab?draft=${id}&mode=thought`]) assert.equal(safeReturn(path),path);
  assert.equal(safeReturn('/?mode=thought'),'/lab?mode=thought');
 });
 test('sign-in rejects retired routes and cannot cross the separate admin boundary',()=>{
