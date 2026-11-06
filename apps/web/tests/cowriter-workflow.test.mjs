@@ -85,7 +85,7 @@ test('one clean rewrite for a declined caption; provider blocks never re-enter g
  const result=await writeDraft({...base,request:async(url,init)=>{
   const body=JSON.parse(init.body);
   assert.ok(body.system_instruction.includes('safety rules'));
-  if(++calls===1)return Response.json({output_text:"I can't help with that."});
+  if(++calls===1)return Response.json({output_text:JSON.stringify({options:[option('upload','I can’t generate a caption for this image.')]})});
   assert.match(body.input[0].text,/Write a fresh, clean situational joke/);
   return Response.json({output_text:JSON.stringify({options:[option('upload',"I can't work under these conditions.")]})});
  }});

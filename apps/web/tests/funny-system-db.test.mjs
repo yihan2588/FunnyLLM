@@ -32,6 +32,7 @@ test('gallery system: anonymous publication boundary, snapshots, moderation, exa
  await db.exec(await readFile(new URL('../supabase/migrations/20261031002556_funnyllm_current_draft_downloads.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261106045123_funny_joke_tastes.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261106045842_funny_taste_conflict_and_innuendo.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261106223344_funny_model_registration_and_example_limits.sql',import.meta.url),'utf8'));
  await q('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now()),($3,$4,now()),($5,$6,now())',[admin,'yihan2588@gmail.com',user,'someone@gmail.com',other,'unlisted@columbia.edu']);
  await q('insert into public.profiles(id,is_superadmin)values($1,true),($2,false),($3,true)',[admin,user,other]);
  await impersonate(other);await assert.rejects(q("select public.funny_admin_snapshot()"),/admin access/);
@@ -123,14 +124,22 @@ test('gallery system: anonymous publication boundary, snapshots, moderation, exa
  await impersonate(admin);await q("select public.funny_admin_mutate('post_remove',$1,'{\"reason\":\"Test private post\"}')",[post]);
  await q("select public.funny_admin_mutate('post_restore',$1)",[post]);
  assert.equal((await q("select public.funny_admin_snapshot('content') d"))[0].d.posts[0].status,'unpublished');
- const example={intent:'Unearned credit',image_description:'A cat sits on a laptop',caption:'Put my name on it.',enabled:true};
+ const example={intent:'Unearned credit',image_description:'x'.repeat(1500),caption:'Put my name on it.',enabled:true};
+ await assert.rejects(q("select public.funny_admin_mutate('example_save',null,$1)",[{...example,image_description:'x'.repeat(1501)}]),{code:'23514'});
  for(let i=0;i<3;i++)await q("select public.funny_admin_mutate('example_save',null,$1)",[example]);
  await assert.rejects(q("select public.funny_admin_mutate('example_save',null,$1)",[example]),/three active/);
  const preview=(await q("select public.funny_admin_snapshot('examples') d"))[0].d.examples.filter(e=>e.enabled).map(({id,intent,image_description,caption})=>({id,intent,image_description,caption}));
  await impersonate(user);const runtimeExamples=(await q('select public.funny_runtime() d'))[0].d.examples;assert.equal(runtimeExamples.length,3);assert.deepEqual(preview,runtimeExamples);
  await impersonate(admin);const config=(await q("select public.funny_admin_snapshot('configuration') d"))[0].d;
  await assert.rejects(q("select public.funny_admin_mutate('model_delete',$1)",[config.models[0].id]),/Select another/);
- const model=(await q("select public.funny_admin_mutate('model_save',null,$1) d",[{label:'Test Gemini',model_id:'gemini-test',enabled:true}]))[0].d;
+ const registerModel = async () => (await q("select public.funny_admin_mutate('model_save',null,$1) d", [
+   {label:'Test Gemini',model_id:'gemini-test',enabled:true},
+ ]))[0].d;
+ const original = await registerModel();
+ await q("select public.funny_admin_mutate('model_delete',$1)",[original.id]);
+ const model = await registerModel();
+ assert.notEqual(model.id,original.id);
+ await assert.rejects(registerModel(),{code:'23505'});
  await assert.rejects(q("select public.funny_admin_mutate('model_activate',$1,'{\"expected_model_id\":\"gemini-changed\"}')",[model.id]),/settings changed/);
  await q("select public.funny_admin_mutate('model_activate',$1,'{\"expected_model_id\":\"gemini-test\"}')",[model.id]);await impersonate(user);assert.equal((await q('select public.funny_runtime() d'))[0].d.model,'gemini-test');
  const current=(await q('select public.cowriter_read($1) d',[state.id]))[0].d;assert.equal(current.options[0].caption,state.options[0].caption);

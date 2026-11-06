@@ -6,6 +6,7 @@ export function isWriterRefusal(text: string) {
   if (/^as an ai(?: language model| assistant)?[, ]+i (?:can|must|am)/i.test(reply)) return true;
   const rest=reply.replace(/^i(?: can(?:not|['’]t)| am unable to|['’]m unable to)\s+/i,"");
   if (rest===reply) return false;
+  if (/^(?:generate|write|provide|create) (?:a caption|any captions?) (?:for|about) (?:this|that|the) (?:image|picture|photo|request)\b/i.test(rest)) return true;
   return /^(?:help|assist) (?:with (?:that|this|your request)\b|you (?:with|create|write)\b)/i.test(rest)
     || /^(?:generate|write|provide|create) (?:that|this|such|explicit|sexual|harmful|offensive|hateful)\b/i.test(rest);
 }

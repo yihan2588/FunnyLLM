@@ -20,7 +20,7 @@ export function parseMutation(form: FormData) {
       const caption = field(form, "caption", 200);
       if (caption.split(/\s+/u).length > 20 || /[\r\n]/.test(caption)) throw new Error("Use a single caption of at most 20 words.");
       if (!Array.from(caption).every(c => Object.hasOwn(fontWidths, c))) throw new Error("Use Latin letters and supported punctuation in example captions; the meme font does not support emoji.");
-      data = { intent: field(form, "intent", 400), image_description: field(form, "image_description", 1500), caption, enabled: checked(form, "enabled") };
+      data = { intent: field(form, "intent", 400), image_description: field(form, "image_description", 1500, 3), caption, enabled: checked(form, "enabled") };
       break;
     }
     case "taste_save": {
