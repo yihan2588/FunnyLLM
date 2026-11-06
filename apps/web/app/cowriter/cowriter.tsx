@@ -104,7 +104,7 @@ export function Cowriter({signedIn,initialMode,initialDraft,tastes,menuUnavailab
     </label>)}</div>
    </fieldset>}
    {menuUnavailable && <p className="cw-hint" role="status">Joke tastes are unavailable. You can still write a draft.</p>}
-   <div className="cw-start">{signedIn?<button className="cw-primary" disabled={busy||(mode==='pic'&&!file&&!uploadPath)}>{state?'Write three new takes':'Write three takes'}</button>:<Link className="cw-primary" href={` /login?next=${encodeURIComponent('/lab?mode='+mode+(taste?'&taste='+taste.version:''))}`.trim()}>Sign in to start</Link>}<span>Private until you choose to share.</span></div>
+   <div className="cw-start">{signedIn?<button className="cw-primary" disabled={busy||(mode==='pic' ? !file&&!uploadPath : thought.trim().length<3)}>{state?'Write three new takes':'Write three takes'}</button>:<Link className="cw-primary" href={` /login?next=${encodeURIComponent('/lab?mode='+mode+(taste?'&taste='+taste.version:''))}`.trim()}>Sign in to start</Link>}<span>Private until you choose to share.</span></div>
   </form></section>
   <div className="cw-status" aria-live="polite" aria-atomic="true">{busy&&<><p>{slow?'Still working. Good timing takes a moment.':stage}</p><button className="cw-secondary" onClick={cancel}>Cancel</button></>}{notice&&!busy&&<p>{notice}</p>}</div>
   {error&&<div className="cw-error" role="alert"><p>{error}</p><button className="cw-link" onClick={()=>setError('')}>Dismiss</button></div>}

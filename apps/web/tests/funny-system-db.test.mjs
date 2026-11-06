@@ -31,6 +31,7 @@ test('gallery system: anonymous publication boundary, snapshots, moderation, exa
  await db.exec(await readFile(new URL('../supabase/migrations/20261030230559_funnyllm_downloads_and_restore.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261031002556_funnyllm_current_draft_downloads.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261106045123_funny_joke_tastes.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261106045842_funny_taste_conflict_and_innuendo.sql',import.meta.url),'utf8'));
  await q('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now()),($3,$4,now()),($5,$6,now())',[admin,'yihan2588@gmail.com',user,'someone@gmail.com',other,'unlisted@columbia.edu']);
  await q('insert into public.profiles(id,is_superadmin)values($1,true),($2,false),($3,true)',[admin,user,other]);
  await impersonate(other);await assert.rejects(q("select public.funny_admin_snapshot()"),/admin access/);
@@ -67,7 +68,7 @@ test('gallery system: anonymous publication boundary, snapshots, moderation, exa
  await impersonate(user);
  const replay=await beginTaste(tastedRequest);
  assert.equal(replay.cached,true);assert.equal(replay.state.runtime.taste.prompt,fields.prompt);
- const stale=crypto.randomUUID();await assert.rejects(beginTaste(stale),/joke taste changed/);
+ const stale=crypto.randomUUID();await assert.rejects(beginTaste(stale),{code:"PT409",message:/joke taste changed/});
  await db.exec('reset role');
  assert.equal((await q('select count(*)::int n from private.cowriter_requests where id=$1',[stale]))[0].n,0);
  await impersonate(user);
