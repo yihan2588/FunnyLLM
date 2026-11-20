@@ -1,31 +1,31 @@
 {
-  "source": "docs/evaluation/development-smoke/results.json#thought-02/cowriter",
+  "source": "FunnyLLM co-writer session on the reviewed image catalog, 2026-11-20",
   "editModel": "gemini-3.1-flash-lite",
   "premise": "A group project teammate taking all the credit.",
   "takes": [
     {
-      "image": "e8f57e63277235d841d76c3e07f951d7082b0397f540e4c9b2b91f89c70d639f.jpg",
-      "alt": "A performer leans over a keyboard beneath a bright stage light.",
-      "caption": "And that is how I built the entire project.",
-      "shorter": "I built this entirely by myself.",
-      "width": 686,
-      "height": 386
+      "image": "119e7d851bb92f6f03c48f4f8e3db60bc20431b0fc70117cf55e336b30926626.jpg",
+      "alt": "A person in white poses in front of blue and white flowers.",
+      "caption": "I basically single-handedly saved this project.",
+      "shorter": "I really carried the team.",
+      "width": 740,
+      "height": 620
     },
     {
       "image": "523c92e05e2e3031a3b524d72612b4026fa166d9972224f79fd2c83f3b2b30de.jpg",
-      "alt": "A robed figure stands before a seated council and blue holograms.",
-      "caption": "I finalized the slides myself.",
-      "shorter": "I alone succeeded.",
+      "alt": "A robed figure addresses a seated council and blue holograms.",
+      "caption": "My team is just background static.",
+      "shorter": "I am the team.",
       "width": 640,
       "height": 358
     },
     {
-      "image": "5823624d9c105a224c1656e47749b2250746a74a7b2c27bb76102a8ee969ba8d.jpg",
-      "alt": "A person works at a laptop in a library while a crowd gathers behind them.",
-      "caption": "I prefer to call it my solo achievement.",
-      "shorter": "I call this my solo achievement.",
-      "width": 903,
-      "height": 1200
+      "image": "cda5d618f615434f97fe7c1a867c73fed99e73b9e9f5c51eb490b13bc2d97d08.jpg",
+      "alt": "A man holds a hand to his ear as penguins pass behind him.",
+      "caption": "Yes, I handled everything by myself.",
+      "shorter": "Solo effort, clearly.",
+      "width": 901,
+      "height": 490
     }
   ]
 }
