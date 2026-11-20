@@ -4,7 +4,7 @@ import "./cowriter/cowriter.css";
 import "./funny.css";
 
 export const metadata: Metadata = {
-  title: "FunnyLLM — Make a meme worth keeping.",
+  title: "Your funny meme maker",
   description: "Start with a picture or a thought. Find a funny angle, refine it, and make it yours.",
   formatDetection: { email: false, telephone: false, address: false },
 };

@@ -7,6 +7,8 @@ import { captionSchema,wordCount,MAX_WORDS,MAX_CHARS,type State,type TasteMenuIt
 import { MemePreview } from "@/app/meme-preview";
 import { prepareUploadImage } from "@/lib/upload-image";
 
+import { rememberDraft, restoreDraft } from "@/lib/cowriter/sign-in-draft";
+
 type DraftSummary={id:string;revision:number;input:{mode:string;text:string};updated_at:string};
 const controls=[{label:'Length',less:'shorter',lessLabel:'Shorter',more:'longer',moreLabel:'Longer'},{label:'Clarity',less:'less_obvious',lessLabel:'Less obvious',more:'more_obvious',moreLabel:'More obvious'},{label:'Bite',less:'less_mean',lessLabel:'Less mean',more:'more_mean',moreLabel:'More mean'}] as const;
 
@@ -39,6 +41,19 @@ export function Cowriter({signedIn,initialMode,initialDraft,tastes,menuUnavailab
  useEffect(()=>{if(initialDraft&&signedIn){void loadDraft(initialDraft);} // The initial URL is consumed once; subsequent changes use explicit actions.
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[]);
+ useEffect(() => {
+  if (initialDraft) return;
+  try {
+   const pending = restoreDraft(window.sessionStorage, initialMode, signedIn);
+   if (!pending) return;
+   // The tab-scoped sign-in handoff is available only after server-rendered inputs hydrate.
+   // eslint-disable-next-line react-hooks/set-state-in-effect
+   setThought(pending.thought);
+   setSpirit(pending.spirit);
+   setLocks(pending.locks);
+   if (pending.hadPhoto) setNotice("Choose your picture again to continue with this wording.");
+  } catch { /* Storage may be disabled in this browser. */ }
+ }, [initialDraft, initialMode, signedIn]);
  function applyState(next:State){setState(next);const option=next.options.find(o=>o.id===selected)??next.options[0];setSelected(option.id);setWording(option.caption);setSwapping(false);setPublishedId('');setPublishedId('');window.history.replaceState({},'',`/lab?mode=${next.input.mode}&draft=${next.id}`);}
  function imageUrl(option:Option){return `/api/cowriter/image?session=${state!.id}&image=${encodeURIComponent(option.image_id)}`;}
  async function loadDraft(draftId:string){await attempt(async(controller,id)=>{setStage('Opening your saved draft');const r=await fetch(`/api/cowriter/session?id=${encodeURIComponent(draftId)}`,{cache:'no-store',signal:controller.signal});const b=await r.json();if(!r.ok)throw new Error(b.error);if(id!==serial.current)return;applyState(b.state);setChoice(b.state.input.tasteVersion);setMode(b.state.input.mode);setFile(null);setPreview('');setUploadPath(b.state.input.mode==='pic'?b.state.input.uploadPath:'');if(b.state.input.mode==='pic')setSpirit(b.state.input.text);else setThought(b.state.input.text);setLocks(b.state.input.locks);setShowDrafts(false);});}
@@ -60,7 +75,16 @@ export function Cowriter({signedIn,initialMode,initialDraft,tastes,menuUnavailab
   catch(e){if(id===serial.current&&!controller.signal.aborted)setError(e instanceof Error?e.message:'Something interrupted this attempt.');}
   finally{if(id===serial.current){setBusy(false);abort.current=null;}}
  }
- async function draft(event:React.FormEvent){event.preventDefault();if(!signedIn)return;
+ async function draft(event:React.FormEvent){event.preventDefault();
+  if (!signedIn) {
+   try {
+    rememberDraft(window.sessionStorage, {mode, thought, spirit, locks, hadPhoto: mode === 'pic' && !!file});
+   } catch {
+    if ((thought || spirit || locks) && !window.confirm("This browser can’t save your wording through sign-in. Continue anyway?")) return;
+   }
+   router.push('/login?next=' + encodeURIComponent('/lab?mode=' + mode + (taste ? '&taste=' + taste.version : '')));
+   return;
+  }
   await attempt(async(controller,id)=>{let path=uploadPath;
    if(mode==='pic'&&!path){if(!file)throw new Error('Choose a picture first.');setStage('Preparing your picture');const prepared=await prepareUploadImage(file);setStage('Saving your private picture');const form=new FormData();form.set('photo',prepared);const r=await fetch('/api/cowriter/upload',{method:'POST',body:form,signal:controller.signal});const b=await r.json();if(!r.ok)throw new Error(b.error);path=b.path;if(id===serial.current)setUploadPath(path);}
    await stream('/api/cowriter/draft',{requestId:crypto.randomUUID(),input:{...(mode==='pic'?{mode,text:spirit,locks,uploadPath:path}:{mode,text:thought,locks}),tasteVersion:taste?.version}},controller,id);
@@ -90,7 +114,7 @@ export function Cowriter({signedIn,initialMode,initialDraft,tastes,menuUnavailab
  return <>
   <section className="cw-intro"><div><h1>Funny Lab</h1><p>A picture. A thought. Three takes to make your own.</p></div>{signedIn&&<button className="cw-secondary" onClick={savedDrafts} disabled={busy} aria-expanded={showDrafts}>Saved drafts</button>}</section>
   {showDrafts&&<section className="cw-drafts" aria-label="Saved drafts">{loadingDrafts?<p>Loading your drafts…</p>:drafts.length?<ul>{drafts.map(d=><li key={d.id}><button onClick={()=>loadDraft(d.id)} disabled={busy}>{d.input.text||'A picture with a funny side'}<span>{d.input.mode==='pic'?'Picture':'Thought'} / {new Date(d.updated_at).toLocaleDateString()}</span></button></li>)}</ul>:<p>Your complete drafts will appear here.</p>}</section>}
-  <section className="cw-compose" aria-label="Create a meme"><form onSubmit={draft}>
+  <section className="cw-compose" aria-label="Create a meme"><form id="cw-create" onSubmit={draft}>
    <fieldset className="cw-modes" disabled={busy}><legend className="cw-sr">Start with</legend>{(['pic','thought'] as const).map(m=><label key={m}><input type="radio" name="mode" value={m} checked={mode===m} onChange={()=>{setMode(m);window.history.replaceState({},'',`/lab?mode=${m}${state?'&draft='+state.id:''}`);}}/><span>{m==='pic'?'I have a pic':'I have a thought'}</span></label>)}</fieldset>
    <div className={`cw-inputs cw-inputs-${mode}`}>
    {mode==='pic'&&<div className="cw-upload"><input ref={fileRef} className="cw-sr" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a picture" disabled={busy} onChange={e=>{const chosen=e.target.files?.[0]??null;setFile(chosen);setPreview(chosen?URL.createObjectURL(chosen):'');setUploadPath('');setError('');}}/>{(preview||(state?.input.mode==='pic'&&uploadPath))?<><Image src={preview||`/api/cowriter/image?session=${state!.id}&image=upload`} alt="Your selected picture" width={500} height={300} unoptimized/><button type="button" className="cw-secondary" onClick={()=>fileRef.current?.click()} disabled={busy}>Change picture</button></>:<button type="button" className="cw-upload-button" onClick={()=>fileRef.current?.click()} disabled={busy}><span className="cw-upload-mark" aria-hidden="true">+</span><strong>Choose your picture</strong><span>JPEG, PNG or WebP</span></button>}</div>}
@@ -104,7 +128,7 @@ export function Cowriter({signedIn,initialMode,initialDraft,tastes,menuUnavailab
     </label>)}</div>
    </fieldset>}
    {menuUnavailable && <p className="cw-hint" role="status">Joke tastes are unavailable. You can still write a draft.</p>}
-   <div className="cw-start">{signedIn?<button className="cw-primary" disabled={busy||(mode==='pic' ? !file&&!uploadPath : thought.trim().length<3)}>{state?'Write three new takes':'Write three takes'}</button>:<Link className="cw-primary" href={` /login?next=${encodeURIComponent('/lab?mode='+mode+(taste?'&taste='+taste.version:''))}`.trim()}>Sign in to start</Link>}<span>Private until you choose to share.</span></div>
+   <div className="cw-start">{signedIn?<button className="cw-primary" disabled={busy||(mode==='pic' ? !file&&!uploadPath : thought.trim().length<3)}>{state?'Write three new takes':'Write three takes'}</button>:<button type="submit" className="cw-primary" formNoValidate>Sign in to start</button>}<span>Private until you choose to share.</span></div>
   </form></section>
   <div className="cw-status" aria-live="polite" aria-atomic="true">{busy&&<><p>{slow?'Still working. Good timing takes a moment.':stage}</p><button className="cw-secondary" onClick={cancel}>Cancel</button></>}{notice&&!busy&&<p>{notice}</p>}</div>
   {error&&<div className="cw-error" role="alert"><p>{error}</p><button className="cw-link" onClick={()=>setError('')}>Dismiss</button></div>}

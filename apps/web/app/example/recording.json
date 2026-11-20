@@ -1,0 +1,31 @@
+{
+  "source": "docs/evaluation/development-smoke/results.json#thought-02/cowriter",
+  "editModel": "gemini-3.1-flash-lite",
+  "premise": "A group project teammate taking all the credit.",
+  "takes": [
+    {
+      "image": "e8f57e63277235d841d76c3e07f951d7082b0397f540e4c9b2b91f89c70d639f.jpg",
+      "alt": "A performer leans over a keyboard beneath a bright stage light.",
+      "caption": "And that is how I built the entire project.",
+      "shorter": "I built this entirely by myself.",
+      "width": 686,
+      "height": 386
+    },
+    {
+      "image": "523c92e05e2e3031a3b524d72612b4026fa166d9972224f79fd2c83f3b2b30de.jpg",
+      "alt": "A robed figure stands before a seated council and blue holograms.",
+      "caption": "I finalized the slides myself.",
+      "shorter": "I alone succeeded.",
+      "width": 640,
+      "height": 358
+    },
+    {
+      "image": "5823624d9c105a224c1656e47749b2250746a74a7b2c27bb76102a8ee969ba8d.jpg",
+      "alt": "A person works at a laptop in a library while a crowd gathers behind them.",
+      "caption": "I prefer to call it my solo achievement.",
+      "shorter": "I call this my solo achievement.",
+      "width": 903,
+      "height": 1200
+    }
+  ]
+}
