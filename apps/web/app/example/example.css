@@ -1,0 +1,26 @@
+.example-page { padding-block: var(--space-lg) var(--space-2xl); }
+.example-intro { margin-block: var(--space-md) var(--space-lg); }
+.example-intro h1 { max-width: 21ch; margin-block: 8px; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.04; }
+.example-intro p { color: var(--color-muted); }
+.example-intro p:first-child, .example-choices small { font-size: .86rem; font-weight: 600; }
+.example-player { display: grid; grid-template-columns: minmax(220px, .75fr) minmax(0, 1.25fr); gap: clamp(20px, 4vw, 52px); align-items: start; }
+.example-player h2 { margin-bottom: 12px; font-size: 1.35rem; }
+.example-choices { display: grid; gap: 8px; }
+.example-choices button { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 12px; padding: 8px; border: 2px solid var(--color-edge); border-radius: 14px; background: var(--color-card); color: var(--color-ink); font: inherit; text-align: left; }
+.example-choices button[aria-pressed=true] { border-color: var(--color-ink); background: var(--color-paper-2); }
+.example-choices img { width: 100%; height: 58px; object-fit: cover; border-radius: 6px; }
+.example-choices small, .example-choices span { display: block; }
+.example-workbench figure { overflow: hidden; margin: 0; border: 1px solid var(--color-edge); border-radius: 18px; background: var(--color-paper); }
+.example-photo { display: block; width: 100%; height: clamp(220px, 30vw, 340px); object-fit: contain; background: var(--color-paper-2); }
+.example-workbench figcaption { padding: 16px; text-align: center; font-size: clamp(1.3rem, 3vw, 2rem); line-height: 1.15; font-weight: 600; }
+.example-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.example-actions { margin-top: 12px; }
+@media (max-width: 700px) {
+  .example-player { display: block; }
+  .example-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 12px; }
+  .example-choices button { display: block; text-align: center; min-width: 0; }
+  .example-choices img { height: 50px; }
+  .example-choices button > span > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .example-intro { margin-block: 8px 16px; }
+  .example-photo { height: clamp(170px, 48vw, 280px); }
+}
