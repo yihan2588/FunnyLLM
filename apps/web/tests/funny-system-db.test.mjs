@@ -153,5 +153,28 @@ test('gallery system: anonymous publication boundary, snapshots, moderation, exa
  await impersonate(admin);await q("select public.funny_admin_mutate('library_delete',$1)",[image]);
  await impersonate(other);await assert.rejects(q('select public.funny_catalog_image($1,$2)',[image,state.id]),/not found/);assert.equal((await q("select * from storage.objects where bucket_id='funny-library'")).length,0);
  await impersonate(user);assert.equal((await q('select public.funny_catalog_image($1,$2) d',[image,state.id]))[0].d.available,false);assert.equal((await q("select * from storage.objects where bucket_id='funny-library'")).length,1);
+ // A catalog retirement must reach gallery snapshots even after the owner edits the draft.
+ await db.exec('reset role');
+ const subtitleFile='3aa6629e4bff6ac8416da3015d2f395d244403b1ed325c21dd0a09a54a286068.jpg';
+ const snapshot={options:[{id:option,image_id:image}],pool:[{id:image,storage_path:subtitleFile}]};
+ await q('insert into private.cowriter_revisions(session_id,revision,state) values($1,7,$2)',[state.id,snapshot]);
+ await q('update public.cowriter_catalog set storage_path=$1,available=true where id=$2',[subtitleFile,image]);
+ await q("update private.funny_posts set revision=7,status='published' where id=$1",[post]);
+ const seeded=await q(`insert into private.funny_posts(caption,alt,width,height,bucket,image_path,author_name)
+   values('Seeded caption','A cartoon',10,10,'catalog',$1,'Studio') returning id`,[subtitleFile]);
+ await db.exec(await readFile(new URL('../supabase/migrations/20261120153909_retire_text_bearing_catalog_images.sql',import.meta.url),'utf8'));
+ assert.equal((await q('select available from public.cowriter_catalog where id=$1',[image]))[0].available,false);
+ await q('update public.cowriter_catalog set available=true where id=$1',[image]);
+ assert.equal((await q('select available from public.cowriter_catalog where id=$1',[image]))[0].available,false);
+ for(const id of [post,seeded[0].id]){
+   assert.deepEqual((await q('select status,removed_from from private.funny_posts where id=$1',[id]))[0],{status:'removed',removed_from:'published'});
+   await assert.rejects(q("update private.funny_posts set status='published' where id=$1",[id]),/Choose another image/);
+ }
+ await q('update private.funny_posts set revision=1 where id=$1',[post]);
+ await q("update private.funny_posts set status='published' where id=$1",[post]); // User-supplied upload.
+ const recording=JSON.parse(await readFile(new URL('../app/example/recording.json',import.meta.url),'utf8'));
+ for(const take of recording.takes){
+   assert.equal((await q('select 1 from private.funny_retired_assets where storage_path=$1',[take.image])).length,0);
+ }
  }finally{await db.close();}
 });
