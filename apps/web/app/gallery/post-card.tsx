@@ -5,8 +5,10 @@ import { useState, useTransition } from "react";
 import { MemePreview } from "@/app/meme-preview";
 import type { GalleryPost } from "./types";
 
+import { GalleryShare } from "./share-link";
+
 type Action = "like" | "save" | "report" | "unpublish" | "republish";
-export function PostCard({ post, signedIn, detail = false }: { post: GalleryPost; signedIn: boolean; detail?: boolean }) {
+export function PostCard({ post, signedIn, detail = false, first = false }: { post: GalleryPost; signedIn: boolean; detail?: boolean; first?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false), [refreshing, refresh] = useTransition();
   const [error, setError] = useState(""), [notice, setNotice] = useState(""), [reporting, setReporting] = useState(false), [reason, setReason] = useState("");
@@ -47,16 +49,19 @@ export function PostCard({ post, signedIn, detail = false }: { post: GalleryPost
     } catch (e) { setError(e instanceof Error ? e.message : "This meme could not be downloaded."); }
     finally { setBusy(false); }
   }
+  const image = <MemePreview framed={!detail} first={first} option={option}
+    url={`/api/gallery/image?id=${post.id}${detail ? "" : "&size=card"}`} />;
   return <article className={`funny-post${detail ? " funny-post-detail" : ""}`} aria-label={`Meme by ${post.author_name}`} aria-busy={disabled}>
-    {detail || post.status !== "published" ? <MemePreview framed={!detail} option={option} url={`/api/gallery/image?id=${post.id}`} /> : <Link className="funny-post-image" href={returnTo} aria-label={`Open meme: ${post.caption}`}><MemePreview framed={!detail} option={option} url={`/api/gallery/image?id=${post.id}`} /></Link>}
+    {detail || post.status !== "published" ? image : <Link className="funny-post-image" href={returnTo} prefetch={false} aria-label={`Open meme: ${post.caption}`}>{image}</Link>}
     <div className="funny-post-body"><div className="funny-byline"><span>By {post.author_name}</span>{post.featured && <span className="funny-featured">Featured</span>}{post.status !== "published" && <span className="funny-status-label">{post.status === "removed" ? "Removed by admin" : "Private"}</span>}</div>
     <div className="funny-post-actions">
       {post.status === "published" && <><button className="cw-link" disabled={disabled} onClick={() => act("like", !post.liked)} aria-pressed={post.liked} aria-label={`${post.liked ? "Unlike" : "Like"} meme`}>{post.liked ? "Liked" : "Like"} <span>{post.like_count}</span></button><button className="cw-link" disabled={disabled} onClick={() => act("save", !post.saved)} aria-pressed={post.saved}>{post.saved ? "Saved" : "Save"}</button><button className="cw-link" disabled={disabled} onClick={remix}>Remix</button></>}
+      {post.status === "published" && <GalleryShare id={post.id} caption={post.caption} />}
       <button className="cw-link" onClick={download} disabled={disabled}>Download</button>
     </div>
     {detail && <p className="funny-post-date">Shared {new Date(post.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })}</p>}
     <details className="funny-post-menu"><summary>More options</summary><div>
-      {post.status === "published" && <><Link href={returnTo}>Open share link</Link><button className="cw-link" disabled={disabled} onClick={() => { if (!signedIn) router.push(login); else setReporting(v => !v); }}>Report this meme</button></>}
+      {post.status === "published" && <><button className="cw-link" disabled={disabled} onClick={() => { if (!signedIn) router.push(login); else setReporting(v => !v); }}>Report this meme</button></>}
       {post.owned && post.status === "published" && <button className="cw-link" disabled={disabled} onClick={() => act("unpublish")}>Remove from gallery</button>}
       {post.owned && post.status === "unpublished" && <button className="cw-link" disabled={disabled} onClick={() => act("republish")}>Publish again</button>}
       {post.status === "removed" && <p>This meme was removed by an admin. It cannot be republished here.</p>}
