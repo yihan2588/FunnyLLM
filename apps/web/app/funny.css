@@ -148,3 +148,13 @@
 
 .funny-intro-actions { display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }
 @media (max-width: 800px) { .funny-page-intro:has(.funny-intro-actions) { flex-direction: column; align-items: flex-start; } }
+
+.funny-thumbnail { background: var(--cw-meme-paper); }
+.funny-thumbnail img { display: block; width: 100%; height: auto; aspect-ratio: 4/3; object-fit: contain; }
+.funny-thumbnail svg { display: block; width: 100%; height: auto; }
+.funny-share-link { display: grid; gap: 12px; margin-top: 16px; }
+.funny-share-link label { display: grid; gap: 6px; }
+.funny-share-link input { min-width: 0; }
+.funny-share-link > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.funny-share-link p:empty { display: none; }
+.funny-share-dialog { text-align: left; }
